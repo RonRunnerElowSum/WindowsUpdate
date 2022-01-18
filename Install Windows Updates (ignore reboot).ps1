@@ -45,41 +45,8 @@ function PunchIt () {
         Write-Warning "This operating system is no longer supported...exiting..."
         EXIT
     }
-    if($ClientOS | Select-String "Server"){
-        Write-Host "OS: $ClientOS"
-        Write-Host "Install patches on servers between 11pm and 5am...exiting..."
-        EXIT
-    }
-    $Win10CurrentBuildNumber = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction SilentlyContinue).CurrentBuildNumber
-    if($Win10CurrentBuildNumber -eq "14393"){
-        $Win10Build = "1607"
-    }
-    if($Win10CurrentBuildNumber -eq "15063"){
-        $Win10Build = "1703"
-    }
-    if($Win10CurrentBuildNumber -eq "16299"){
-        $Win10Build = "1709"
-    }
-    if($Win10CurrentBuildNumber -eq "17134"){
-        $Win10Build = "1803"
-    }
-    if($Win10CurrentBuildNumber -eq "18363"){
-        $Win10Build = "1909"
-    }
-    if($Win10CurrentBuildNumber -eq "19041"){
-        $Win10Build = "2004"
-    }
-    if($Win10CurrentBuildNumber -eq "19042"){
-        $Win10Build = "20H2"
-    }
-    if($Win10CurrentBuildNumber -eq "19043"){
-        $Win10Build = "21H1"
-    }
-    if($Win10CurrentBuildNumber -eq "19044"){
-        $Win10Build = "21H2"
-    }
     Write-Host "Computer Name: $Env:COMPUTERNAME"
-    Write-Host "OS: $ClientOS $Win10Build"
+    Write-Host "OS: $ClientOS"
     if(!(Get-Module -Name "PSWindowsUpdate")){
         InstallPSWindowsUpdate
     }

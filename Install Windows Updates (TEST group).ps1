@@ -123,7 +123,7 @@ if($CurrentDate -eq $PatchGroupTest){
         Install-PackageProvider -Name NuGet -Force | Out-Null
         Install-Module PSWindowsUpdate -Force | Out-Null
         Import-Module PSWindowsUpdate -Force | Out-Null
-        if(!(Get-Module | Select-Object -ExpandProperty Name | Select-String PSWindowsUpdate)){
+        if(!(Get-Module -Name "PSWindowsUpdate")){
             Write-Warning "The module PSWindowsUpdate failed to install...exiting..."
             EXIT
         }

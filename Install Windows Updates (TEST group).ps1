@@ -155,7 +155,7 @@ if($CurrentDate -eq $PatchGroupTest){
         }
     }
 
-function PunchIt () {
+function PunchIt {
     $Win10CurrentBuildNumber = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction SilentlyContinue).CurrentBuildNumber
     if($Win10CurrentBuildNumber -eq "14393"){
         $Win10Build = "1607"

@@ -101,9 +101,10 @@ function InstallUpdatesWithNoReboot () {
 function CheckPendingRebootStatus () {
     $PendingRebootStatus = Get-WURebootStatus -Silent -CancelReboot
     if($PendingRebootStatus -eq "True"){
-        if(Get-ScheduledTask -TaskName "(MSP) Pending Reboot Checker" -ErrorAction SilentlyContinue){
-            Start-ScheduledTask -TaskName "(MSP) Pending Reboot Checker"
+        if(!(Get-ScheduledTask -TaskName "(MSP) Pending Reboot Checker" -ErrorAction SilentlyContinue)){
+            Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/PendingRebootChecker/Prod-Branch/PRC%20Installer.ps1" -UseBasicParsing | Invoke-Expression; PunchIt | Out-Null
         }
+        Start-ScheduledTask -TaskName "(MSP) Pending Reboot Checker"
     }
 }
 

@@ -24,6 +24,7 @@ function Get-ThisMonthsPatchTuesday {
     $patchTuesday = $firstWeekDay.AddDays($dayOffset)
     return $patchTuesday
 }
+
 function Get-LastMonthsPatchTuesday {
     [CmdletBinding()]
     Param
@@ -70,16 +71,38 @@ function InstallPSWindowsUpdate () {
         Write-Warning "The module PSWindowsUpdate failed to install...exiting..."
         EXIT
     }
-    else{
-        InstallUpdates
-    }  
 }
 
-function InstallUpdates () {
+function InstallUpdatesWithNoReboot () {
     $BlacklistedPatches = (Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/BlackListedPatches.cfg" -UseBasicParsing).Content
     Write-Host "Checking for Windows Updates..."
     $DetailedMissingUpdates = (Get-WindowsUpdate -MicrosoftUpdate -NotCategory Drivers -NotTitle "Feature update to Windows 10" -NotKBArticleID $BlacklistedPatches)
-    $MissingUpdates = $DetailedMissingUpdates | Select-Object -ExpandProperty "KB" -ErrorAction SilentlyContinue
+    $MissingUpdates = ($DetailedMissingUpdates).KB
+    if(!($Null -eq $MissingUpdates)){
+        if($MissingUpdates.Count -eq "1"){
+            $FormattedMissingUpdates = $MissingUpdates
+        }
+        else{
+            $FormattedMissingUpdates = [string]::Join("`r`n",($MissingUpdates))
+        }
+        Write-Warning "$Env:COMPUTERNAME is missing the following patches:`r`n$FormattedMissingUpdates"
+        Write-Host "Installing missing updates..."
+        $FormattedMissingUpdates | ForEach-Object {
+            Install-WindowsUpdate -KBArticleID "$_" -IgnoreReboot -Confirm:$False
+        }
+        CheckPendingRebootStatus
+    }
+    else{
+        Write-Host "Windows is up-to-date!"
+        EXIT
+    }
+}
+
+function InstallUpdatesWithForcedReboot () {
+    $BlacklistedPatches = (Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/BlackListedPatches.cfg" -UseBasicParsing).Content
+    Write-Host "Checking for Windows Updates..."
+    $DetailedMissingUpdates = (Get-WindowsUpdate -MicrosoftUpdate -NotCategory Drivers -NotTitle "Feature update to Windows 10" -NotKBArticleID $BlacklistedPatches)
+    $MissingUpdates = ($DetailedMissingUpdates).KB
     if(!($Null -eq $MissingUpdates)){
         if($MissingUpdates.Count -eq "1"){
             $FormattedMissingUpdates = $MissingUpdates
@@ -99,8 +122,16 @@ function InstallUpdates () {
     }
 }
 
+function CheckPendingRebootStatus () {
+    $PendingRebootStatus = Get-WURebootStatus -Silent -CancelReboot
+    if($PendingRebootStatus -eq "True"){
+        if(Get-ScheduledTask -TaskName "(MSP) Pending Reboot Checker" -ErrorAction SilentlyContinue){
+            Start-ScheduledTask -TaskName "(MSP) Pending Reboot Checker"
+        }
+    }
+}
+
 function PunchIt () {
-    
     $ClientOS = Get-WmiObject -class Win32_OperatingSystem | Select-Object -ExpandProperty Caption
     if(($ClientOS | Select-String "Windows 7") -or ($ClientOS | Select-String "Server 2003") -or ($ClientOS | Select-String "2008")){
         Write-Host "OS: $ClientOS"
@@ -143,6 +174,7 @@ function PunchIt () {
     $PatchGroupPilot += $PatchGroupProduction
     
     $PatchGroupTest = @()
+
     $PatchGroupTest += ($PatchTuesday).ToShortDateString()
     $PatchGroupTest += ($PatchTuesday).AddDays(1).ToShortDateString()
     $PatchGroupTest += ($PatchTuesday).AddDays(2).ToShortDateString()
@@ -155,46 +187,21 @@ function PunchIt () {
     
     $CurrentDate = Get-Date -Format d
     
-    if(($CurrentDate -eq $PatchGroupProduction) -and ((Get-Date).TimeOfDay.TotalHours -lt "5")){
-        $Win10CurrentBuildNumber = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction SilentlyContinue).CurrentBuildNumber
-        if($Win10CurrentBuildNumber -eq "14393"){
-            $Win10Build = "1607"
-        }
-        if($Win10CurrentBuildNumber -eq "15063"){
-            $Win10Build = "1703"
-        }
-        if($Win10CurrentBuildNumber -eq "16299"){
-            $Win10Build = "1709"
-        }
-        if($Win10CurrentBuildNumber -eq "17134"){
-            $Win10Build = "1803"
-        }
-        if($Win10CurrentBuildNumber -eq "18363"){
-            $Win10Build = "1909"
-        }
-        if($Win10CurrentBuildNumber -eq "19041"){
-            $Win10Build = "2004"
-        }
-        if($Win10CurrentBuildNumber -eq "19042"){
-            $Win10Build = "20H2"
-        }
-        if($Win10CurrentBuildNumber -eq "19043"){
-            $Win10Build = "21H1"
-        }
-        if($Win10CurrentBuildNumber -eq "19044"){
-            $Win10Build = "21H2"
-        }
+    if($PatchGroupProduction | Select-String $CurrentDate){
         Write-Host "Computer Name: $Env:COMPUTERNAME"
-        Write-Host "OS: $ClientOS $Win10Build"
+        Write-Host "OS: $ClientOS"
         if(!(Get-Module -Name "PSWindowsUpdate")){
             InstallPSWindowsUpdate
         }
+        if(((Get-Date).TimeOfDay.TotalHours -lt "5")){
+            InstallUpdatesWithForcedReboot
+        }
         else{
-            InstallUpdates
-        } 
+            InstallUpdatesWithNoReboot
+        }
     }
     else{
-        Write-Host "Outside of patch window...$Env:COMPUTERNAME patches between 12am and 5am on the following days this patch cycle:`r`n`r`n$PatchGroupProduction"
+        Write-Host "Outside of patch window...$Env:COMPUTERNAME patches on the following days this patch cycle:`r`n`r`n$PatchGroupProduction"
         EXIT
     }
 }

@@ -155,7 +155,7 @@ function PunchIt () {
     
     $CurrentDate = Get-Date -Format d
     
-    if(($CurrentDate -eq $PatchGroupProduction) -and ((Get-Date).TimeOfDay.TotalHours -lt "5")){
+    if(($CurrentDate -eq $PatchGroupTest) <#-and ((Get-Date).TimeOfDay.TotalHours -lt "5")#>){
         $Win10CurrentBuildNumber = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction SilentlyContinue).CurrentBuildNumber
         if($Win10CurrentBuildNumber -eq "14393"){
             $Win10Build = "1607"
@@ -194,7 +194,7 @@ function PunchIt () {
         } 
     }
     else{
-        Write-Host "Outside of patch window...$Env:COMPUTERNAME patches between 12am and 5am on the following days this patch cycle:`r`n`r`n$PatchGroupProduction"
+        Write-Host "Outside of patch window...$Env:COMPUTERNAME patches on the following days this patch cycle:`r`n`r`n$PatchGroupTest"
         EXIT
     }
 }

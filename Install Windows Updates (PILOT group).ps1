@@ -1,12 +1,3 @@
-$BlacklistedPatches = (Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/BlackListedPatches.cfg" -UseBasicParsing).Content
-
-$ClientOS = Get-WmiObject -class Win32_OperatingSystem | Select-Object -ExpandProperty Caption
-if(($ClientOS | Select-String "Windows 7") -or ($ClientOS | Select-String "Server 2003") -or ($ClientOS | Select-String "2008")){
-    Write-Host "OS: $ClientOS"
-    Write-Warning "This operating system is no longer supported...exiting..."
-    EXIT
-}
-
 function Get-ThisMonthsPatchTuesday {
     [CmdletBinding()]
     Param
@@ -69,130 +60,141 @@ function Get-LastMonthsPatchTuesday {
     return $LastMonthsPatchTuesday
 }
 
-if((Get-Date) -lt (Get-ThisMonthsPatchTuesday)){
-    $PatchTuesday = Get-LastMonthsPatchTuesday
-}
-else{
-    $PatchTuesday = Get-ThisMonthsPatchTuesday
-}
-
-$PatchGroupProduction = @()
-
-$PatchGroupProduction += ($PatchTuesday).AddDays(12).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(13).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(14).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(15).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(16).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(17).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(18).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(19).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(20).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(21).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(22).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(23).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(24).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(25).ToShortDateString()
-$PatchGroupProduction += ($PatchTuesday).AddDays(26).ToShortDateString()
-
-$PatchGroupPilot = @()
-
-$PatchGroupPilot += ($PatchTuesday).AddDays(7).ToShortDateString()
-$PatchGroupPilot += ($PatchTuesday).AddDays(8).ToShortDateString()
-$PatchGroupPilot += ($PatchTuesday).AddDays(9).ToShortDateString()
-$PatchGroupPilot += ($PatchTuesday).AddDays(10).ToShortDateString()
-$PatchGroupPilot += ($PatchTuesday).AddDays(11).ToShortDateString()
-$PatchGroupPilot += $PatchGroupProduction
-
-$PatchGroupTest = @()
-$PatchGroupTest += ($PatchTuesday).ToShortDateString()
-$PatchGroupTest += ($PatchTuesday).AddDays(1).ToShortDateString()
-$PatchGroupTest += ($PatchTuesday).AddDays(2).ToShortDateString()
-$PatchGroupTest += ($PatchTuesday).AddDays(3).ToShortDateString()
-$PatchGroupTest += ($PatchTuesday).AddDays(4).ToShortDateString()
-$PatchGroupTest += ($PatchTuesday).AddDays(5).ToShortDateString()
-$PatchGroupTest += ($PatchTuesday).AddDays(6).ToShortDateString()
-$PatchGroupTest += $PatchGroupPilot
-$PatchGroupTest += $PatchGroupProductions
-
-$CurrentDate = Get-Date -Format d
-
-if(($CurrentDate -eq $PatchGroupPilot) <#-and ((Get-Date).TimeOfDay.TotalHours -lt "5")#>){
-    function InstallPSWindowsUpdate () {
-        Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser -Force -ErrorAction SilentlyContinue
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Install-PackageProvider -Name NuGet -Force | Out-Null
-        Install-Module PSWindowsUpdate -Force | Out-Null
-        Import-Module PSWindowsUpdate -Force | Out-Null
-        if(!(Get-Module -Name "PSWindowsUpdate")){
-            Write-Warning "The module PSWindowsUpdate failed to install...exiting..."
-            EXIT
-        }
-        else{
-            InstallUpdates
-        }  
-    }
-    
-    function InstallUpdates () {
-        Write-Host "Checking for Windows Updates..."
-        $DetailedMissingUpdates = (Get-WindowsUpdate -MicrosoftUpdate -NotCategory Drivers -NotTitle "Feature update to Windows 10" -NotKBArticleID $BlacklistedPatches)
-        $MissingUpdates = $DetailedMissingUpdates | Select-Object -ExpandProperty "KB" -ErrorAction SilentlyContinue
-        if(!($Null -eq $MissingUpdates)){
-            if($MissingUpdates.Count -eq "1"){
-                $FormattedMissingUpdates = $MissingUpdates
-            }
-            else{
-                $FormattedMissingUpdates = [string]::Join("`r`n",($MissingUpdates))
-            }
-            Write-Warning "$Env:COMPUTERNAME is missing the following patches:`r`n$FormattedMissingUpdates"
-            Write-Host "Installing missing updates..."
-            $FormattedMissingUpdates | ForEach-Object {
-                Install-WindowsUpdate -KBArticleID "$_" -AutoReboot -Confirm:$False
-            }
-        }
-        else{
-            Write-Host "Windows is up-to-date!"
-            EXIT
-        }
-    }
-
-$Win10CurrentBuildNumber = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction SilentlyContinue).CurrentBuildNumber
-if($Win10CurrentBuildNumber -eq "14393"){
-    $Win10Build = "1607"
-}
-if($Win10CurrentBuildNumber -eq "15063"){
-    $Win10Build = "1703"
-}
-if($Win10CurrentBuildNumber -eq "16299"){
-    $Win10Build = "1709"
-}
-if($Win10CurrentBuildNumber -eq "17134"){
-    $Win10Build = "1803"
-}
-if($Win10CurrentBuildNumber -eq "18363"){
-    $Win10Build = "1909"
-}
-if($Win10CurrentBuildNumber -eq "19041"){
-    $Win10Build = "2004"
-}
-if($Win10CurrentBuildNumber -eq "19042"){
-    $Win10Build = "20H2"
-}
-if($Win10CurrentBuildNumber -eq "19043"){
-    $Win10Build = "21H1"
-}
-if($Win10CurrentBuildNumber -eq "19044"){
-    $Win10Build = "21H2"
-}
-Write-Host "Computer Name: $Env:COMPUTERNAME"
-Write-Host "OS: $ClientOS $Win10Build"
+function InstallPSWindowsUpdate () {
+    Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser -Force -ErrorAction SilentlyContinue
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    Install-PackageProvider -Name NuGet -Force | Out-Null
+    Install-Module PSWindowsUpdate -Force | Out-Null
+    Import-Module PSWindowsUpdate -Force | Out-Null
     if(!(Get-Module -Name "PSWindowsUpdate")){
-            InstallPSWindowsUpdate
+        Write-Warning "The module PSWindowsUpdate failed to install...exiting..."
+        EXIT
     }
     else{
         InstallUpdates
+    }  
+}
+
+function InstallUpdates () {
+    $BlacklistedPatches = (Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/BlackListedPatches.cfg" -UseBasicParsing).Content
+    Write-Host "Checking for Windows Updates..."
+    $DetailedMissingUpdates = (Get-WindowsUpdate -MicrosoftUpdate -NotCategory Drivers -NotTitle "Feature update to Windows 10" -NotKBArticleID $BlacklistedPatches)
+    $MissingUpdates = $DetailedMissingUpdates | Select-Object -ExpandProperty "KB" -ErrorAction SilentlyContinue
+    if(!($Null -eq $MissingUpdates)){
+        if($MissingUpdates.Count -eq "1"){
+            $FormattedMissingUpdates = $MissingUpdates
+        }
+        else{
+            $FormattedMissingUpdates = [string]::Join("`r`n",($MissingUpdates))
+        }
+        Write-Warning "$Env:COMPUTERNAME is missing the following patches:`r`n$FormattedMissingUpdates"
+        Write-Host "Installing missing updates..."
+        $FormattedMissingUpdates | ForEach-Object {
+            Install-WindowsUpdate -KBArticleID "$_" -IgnoreReboot -Confirm:$False
+        }
+    }
+    else{
+        Write-Host "Windows is up-to-date!"
+        EXIT
     }
 }
-else{
-    Write-Host "Outside of patch window...$Env:COMPUTERNAME patches on the following days this patch cycle:`r`n`r`n$PatchGroupPilot"
-    EXIT
+
+function PunchIt () {
+    
+    $ClientOS = Get-WmiObject -class Win32_OperatingSystem | Select-Object -ExpandProperty Caption
+    if(($ClientOS | Select-String "Windows 7") -or ($ClientOS | Select-String "Server 2003") -or ($ClientOS | Select-String "2008")){
+        Write-Host "OS: $ClientOS"
+        Write-Warning "This operating system is no longer supported...exiting..."
+        EXIT
+    }
+
+    if((Get-Date) -lt (Get-ThisMonthsPatchTuesday)){
+        $PatchTuesday = Get-LastMonthsPatchTuesday
+    }
+    else{
+        $PatchTuesday = Get-ThisMonthsPatchTuesday
+    }
+    
+    $PatchGroupProduction = @()
+    
+    $PatchGroupProduction += ($PatchTuesday).AddDays(12).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(13).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(14).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(15).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(16).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(17).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(18).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(19).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(20).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(21).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(22).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(23).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(24).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(25).ToShortDateString()
+    $PatchGroupProduction += ($PatchTuesday).AddDays(26).ToShortDateString()
+    
+    $PatchGroupPilot = @()
+    
+    $PatchGroupPilot += ($PatchTuesday).AddDays(7).ToShortDateString()
+    $PatchGroupPilot += ($PatchTuesday).AddDays(8).ToShortDateString()
+    $PatchGroupPilot += ($PatchTuesday).AddDays(9).ToShortDateString()
+    $PatchGroupPilot += ($PatchTuesday).AddDays(10).ToShortDateString()
+    $PatchGroupPilot += ($PatchTuesday).AddDays(11).ToShortDateString()
+    $PatchGroupPilot += $PatchGroupProduction
+    
+    $PatchGroupTest = @()
+    $PatchGroupTest += ($PatchTuesday).ToShortDateString()
+    $PatchGroupTest += ($PatchTuesday).AddDays(1).ToShortDateString()
+    $PatchGroupTest += ($PatchTuesday).AddDays(2).ToShortDateString()
+    $PatchGroupTest += ($PatchTuesday).AddDays(3).ToShortDateString()
+    $PatchGroupTest += ($PatchTuesday).AddDays(4).ToShortDateString()
+    $PatchGroupTest += ($PatchTuesday).AddDays(5).ToShortDateString()
+    $PatchGroupTest += ($PatchTuesday).AddDays(6).ToShortDateString()
+    $PatchGroupTest += $PatchGroupPilot
+    $PatchGroupTest += $PatchGroupProductions
+    
+    $CurrentDate = Get-Date -Format d
+    
+    if(($CurrentDate -eq $PatchGroupPilot) <#-and ((Get-Date).TimeOfDay.TotalHours -lt "5")#>){
+        $Win10CurrentBuildNumber = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction SilentlyContinue).CurrentBuildNumber
+        if($Win10CurrentBuildNumber -eq "14393"){
+            $Win10Build = "1607"
+        }
+        if($Win10CurrentBuildNumber -eq "15063"){
+            $Win10Build = "1703"
+        }
+        if($Win10CurrentBuildNumber -eq "16299"){
+            $Win10Build = "1709"
+        }
+        if($Win10CurrentBuildNumber -eq "17134"){
+            $Win10Build = "1803"
+        }
+        if($Win10CurrentBuildNumber -eq "18363"){
+            $Win10Build = "1909"
+        }
+        if($Win10CurrentBuildNumber -eq "19041"){
+            $Win10Build = "2004"
+        }
+        if($Win10CurrentBuildNumber -eq "19042"){
+            $Win10Build = "20H2"
+        }
+        if($Win10CurrentBuildNumber -eq "19043"){
+            $Win10Build = "21H1"
+        }
+        if($Win10CurrentBuildNumber -eq "19044"){
+            $Win10Build = "21H2"
+        }
+        Write-Host "Computer Name: $Env:COMPUTERNAME"
+        Write-Host "OS: $ClientOS $Win10Build"
+        if(!(Get-Module -Name "PSWindowsUpdate")){
+            InstallPSWindowsUpdate
+        }
+        else{
+            InstallUpdates
+        } 
+    }
+    else{
+        Write-Host "Outside of patch window...$Env:COMPUTERNAME patches on the following days this patch cycle:`r`n`r`n$PatchGroupPilot"
+        EXIT
+    }
 }

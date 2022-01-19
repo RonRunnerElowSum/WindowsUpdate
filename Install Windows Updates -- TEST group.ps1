@@ -85,10 +85,11 @@ function InstallUpdatesWithNoReboot () {
         else{
             $FormattedMissingUpdates = [string]::Join("`r`n",($MissingUpdates))
         }
+        AppendLogFile
         Write-Warning "$Env:COMPUTERNAME is missing the following patches:`r`n$FormattedMissingUpdates"
         Write-Host "Installing missing updates..."
         $FormattedMissingUpdates | ForEach-Object {
-            Install-WindowsUpdate -KBArticleID "$_" -IgnoreReboot -Confirm:$False | Out-File "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog.log" -Append
+            Install-WindowsUpdate -KBArticleID "$_" -IgnoreReboot -Confirm:$False | Out-File "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Append
         }
         CheckPendingRebootStatus
     }
@@ -110,10 +111,11 @@ function InstallUpdatesWithForcedReboot () {
         else{
             $FormattedMissingUpdates = [string]::Join("`r`n",($MissingUpdates))
         }
+        AppendLogFile
         Write-Warning "$Env:COMPUTERNAME is missing the following patches:`r`n$FormattedMissingUpdates"
         Write-Host "Installing missing updates..."
         $FormattedMissingUpdates | ForEach-Object {
-            Install-WindowsUpdate -KBArticleID "$_" -AutoReboot -Confirm:$False | Out-File "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog.log" -Append
+            Install-WindowsUpdate -KBArticleID "$_" -AutoReboot -Confirm:$False | Out-File "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Append
         }
     }
     else{
@@ -133,11 +135,21 @@ function CheckPendingRebootStatus () {
 }
 
 function CreateLogFile () {
+    $CurrentMonthYear = Get-Date -Format MMyyyy
     if(!(Test-Path -Path "C:\Windows\Temp")){New-Item -Path "C:\Windows" -Name "Temp" -ItemType "Directory" | Out-Null}
     if(!(Test-Path -Path "C:\Windows\Temp\MSP")){New-Item -Path "C:\Windows\Temp" -Name "MSP" -ItemType "Directory" | Out-Null}
     if(!(Test-Path -Path "C:\Windows\Temp\MSP\Logs")){New-Item -Path "C:\Windows\Temp\MSP" -Name "Logs" -ItemType "Directory" | Out-Null}
     if(!(Test-Path -Path "C:\Windows\Temp\MSP\Logs\Patch Health")){New-Item -Path "C:\Windows\Temp\MSP\Logs" -Name "Patch Health" -ItemType "Directory" | Out-Null}
-    if(!(Test-Path -Path "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog.log")){New-Item -Path "C:\Windows\Temp\MSP\Logs\Patch Health" -Name "PatchHealthLog.log" -ItemType "File" | Out-Null}
+    if(!(Test-Path -Path "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log")){New-Item -Path "C:\Windows\Temp\MSP\Logs\Patch Health" -Name "PatchHealthLog-$CurrentMonthYear.log" -ItemType "File" | Out-Null}
+}
+
+function AppendLogFile () {
+    $CurrentMonthYear = Get-Date -Format MMyyyy
+    Add-Content -Path "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Value "-------------------- $(Get-Date)"
+    Add-Content -Path "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Value "Computer Name: $Env:COMPUTERNAME"
+    Add-Content -Path "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Value "Number of missing updates: $(($MissingUpdates).Count)"
+    Add-Content -Path "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Value "Missing updates: $FormattedMissingUpdates"
+    Add-Content -Path "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Value "Installing updates..."
 }
 
 function PunchIt () {

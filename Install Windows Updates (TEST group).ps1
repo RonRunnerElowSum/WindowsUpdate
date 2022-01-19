@@ -68,8 +68,8 @@ function InstallPSWindowsUpdate () {
     Install-Module PSWindowsUpdate -Force | Out-Null
     Import-Module PSWindowsUpdate -Force | Out-Null
     if(!(Get-Module -Name "PSWindowsUpdate")){
-        Write-Warning "The module PSWindowsUpdate failed to install...exiting..."
-        EXIT
+        Write-Warning "The module PSWindowsUpdate failed to install...#EXITing..."
+        #EXIT
     }
 }
 
@@ -94,7 +94,7 @@ function InstallUpdatesWithNoReboot () {
     }
     else{
         Write-Host "Windows is up-to-date!"
-        EXIT
+        #EXIT
     }
 }
 
@@ -118,7 +118,7 @@ function InstallUpdatesWithForcedReboot () {
     }
     else{
         Write-Host "Windows is up-to-date!"
-        EXIT
+        #EXIT
     }
 }
 
@@ -144,8 +144,8 @@ function PunchIt () {
     $ClientOS = Get-WmiObject -class Win32_OperatingSystem | Select-Object -ExpandProperty Caption
     if(($ClientOS | Select-String "Windows 7") -or ($ClientOS | Select-String "Server 2003") -or ($ClientOS | Select-String "2008")){
         Write-Host "OS: $ClientOS"
-        Write-Warning "This operating system is no longer supported...exiting..."
-        EXIT
+        Write-Warning "This operating system is no longer supported...#EXITing..."
+        #EXIT
     }
 
     if((Get-Date) -lt (Get-ThisMonthsPatchTuesday)){
@@ -212,6 +212,6 @@ function PunchIt () {
     }
     else{
         Write-Host "Outside of patch window...$Env:COMPUTERNAME patches on the following days this patch cycle:`r`n`r`n$PatchGroupTest"
-        EXIT
+        #EXIT
     }
 }

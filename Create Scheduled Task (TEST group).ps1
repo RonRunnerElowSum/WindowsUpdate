@@ -9,8 +9,8 @@ function CreateSchedTask () {
     $Trigger += New-ScheduledTaskTrigger -Daily -At 12am
     $Trigger += New-ScheduledTaskTrigger -Daily -At 10am
     $Trigger += New-ScheduledTaskTrigger -Daily -At 3pm
-    $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun
-    Register-ScheduledTask -Action $Action -Trigger $Trigger -Settings $Settings -User SYSTEM -TaskName $TaskName -RunLevel Highest -Description "Keeps Windows up-to-date." | Out-Null
+    $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -StartWhenAvailable
+    Register-ScheduledTask -Action $Action -Trigger $Trigger -Settings $Settings -User "NT AUTHORITY\SYSTEM" -TaskName $TaskName -RunLevel Highest -Description "Keeps Windows up-to-date." | Out-Null
     if(!(Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue)){
         Write-Warning "Failed to create schedule task...exiting..."
         EXIT

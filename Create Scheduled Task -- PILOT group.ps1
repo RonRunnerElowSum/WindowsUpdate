@@ -22,6 +22,11 @@ function CreateSchedTask () {
 }
 
 function PunchIt () {
+    $ClientOS = Get-WmiObject -class Win32_OperatingSystem | Select-Object -ExpandProperty Caption
+    if(($ClientOS | Select-String "Windows 7") -or ($ClientOS | Select-String "Server 2003") -or ($ClientOS | Select-String "2008")){
+        Write-Host "This operating system ($ClientOS) is no longer supported...exiting..."
+        EXIT
+    }
     if(Get-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- PRODUCTION)" -ErrorAction SilentlyContinue){
         Unregister-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- PRODUCTION)" -Confirm:$False | Out-Null
     }
@@ -34,5 +39,7 @@ function PunchIt () {
     if(Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue){
         Write-Host "The scheduled task [$TaskName] already exists..."
     }
-    CreateSchedTask
+    else{
+        CreateSchedTask
+    }
 }

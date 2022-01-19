@@ -74,6 +74,7 @@ function InstallPSWindowsUpdate () {
 }
 
 function InstallUpdatesWithNoReboot () {
+    $CurrentMonthYear = Get-Date -Format MMyyyy
     $BlacklistedPatches = (Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/BlackListedPatches.cfg" -UseBasicParsing).Content
     Write-Host "Checking for Windows Updates..."
     $DetailedMissingUpdates = (Get-WindowsUpdate -MicrosoftUpdate -NotCategory Drivers -NotTitle "Feature update to Windows 10" -NotKBArticleID $BlacklistedPatches)
@@ -100,6 +101,7 @@ function InstallUpdatesWithNoReboot () {
 }
 
 function InstallUpdatesWithForcedReboot () {
+    $CurrentMonthYear = Get-Date -Format MMyyyy
     $BlacklistedPatches = (Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/BlackListedPatches.cfg" -UseBasicParsing).Content
     Write-Host "Checking for Windows Updates..."
     $DetailedMissingUpdates = (Get-WindowsUpdate -MicrosoftUpdate -NotCategory Drivers -NotTitle "Feature update to Windows 10" -NotKBArticleID $BlacklistedPatches)

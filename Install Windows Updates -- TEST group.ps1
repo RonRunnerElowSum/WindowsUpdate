@@ -74,7 +74,6 @@ function InstallPSWindowsUpdate () {
 }
 
 function InstallUpdatesWithNoReboot () {
-    $CurrentMonthYear = Get-Date -Format MMyyyy
     $BlacklistedPatches = (Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/BlackListedPatches.cfg" -UseBasicParsing).Content
     Write-Host "Checking for Windows Updates..."
     $DetailedMissingUpdates = (Get-WindowsUpdate -MicrosoftUpdate -NotCategory Drivers -NotTitle "Feature update to Windows 10" -NotKBArticleID $BlacklistedPatches)
@@ -90,6 +89,7 @@ function InstallUpdatesWithNoReboot () {
         Write-Warning "$Env:COMPUTERNAME is missing the following patches:`r`n$FormattedMissingUpdates"
         Write-Host "Installing missing updates..."
         $FormattedMissingUpdates | ForEach-Object {
+            $CurrentMonthYear = Get-Date -Format MMyyyy
             Install-WindowsUpdate -KBArticleID "$_" -IgnoreReboot -Confirm:$False | Out-File "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Append
         }
         CheckPendingRebootStatus
@@ -100,7 +100,6 @@ function InstallUpdatesWithNoReboot () {
 }
 
 function InstallUpdatesWithForcedReboot () {
-    $CurrentMonthYear = Get-Date -Format MMyyyy
     $BlacklistedPatches = (Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/BlackListedPatches.cfg" -UseBasicParsing).Content
     Write-Host "Checking for Windows Updates..."
     $DetailedMissingUpdates = (Get-WindowsUpdate -MicrosoftUpdate -NotCategory Drivers -NotTitle "Feature update to Windows 10" -NotKBArticleID $BlacklistedPatches)
@@ -116,6 +115,7 @@ function InstallUpdatesWithForcedReboot () {
         Write-Warning "$Env:COMPUTERNAME is missing the following patches:`r`n$FormattedMissingUpdates"
         Write-Host "Installing missing updates..."
         $FormattedMissingUpdates | ForEach-Object {
+            $CurrentMonthYear = Get-Date -Format MMyyyy
             Install-WindowsUpdate -KBArticleID "$_" -AutoReboot -Confirm:$False | Out-File "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Append
         }
     }

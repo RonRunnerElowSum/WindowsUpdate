@@ -31,8 +31,8 @@ function PunchIt () {
     if(Get-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- PILOT)" -ErrorAction SilentlyContinue){
         Unregister-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- PILOT)" -Confirm:$False | Out-Null
     }
-    if(Get-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- TEST)" -ErrorAction SilentlyContinue){
-        Write-Host "The scheduled task [(MSP) Install Missing Windows Updates (PatchGroup -- TEST)] already exists..."
+    if(Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue){
+        Write-Host "The scheduled task [$TaskName] already exists..."
     }
     CreateSchedTask
 }

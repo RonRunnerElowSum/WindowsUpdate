@@ -88,7 +88,7 @@ function InstallUpdatesWithNoReboot () {
         Write-Warning "$Env:COMPUTERNAME is missing the following patches:`r`n$FormattedMissingUpdates"
         Write-Host "Installing missing updates..."
         $FormattedMissingUpdates | ForEach-Object {
-            Install-WindowsUpdate -KBArticleID "$_" -IgnoreReboot -Confirm:$False
+            Install-WindowsUpdate -KBArticleID "$_" -IgnoreReboot -Confirm:$False | Out-File "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog.log" -Append
         }
         CheckPendingRebootStatus
     }
@@ -113,7 +113,7 @@ function InstallUpdatesWithForcedReboot () {
         Write-Warning "$Env:COMPUTERNAME is missing the following patches:`r`n$FormattedMissingUpdates"
         Write-Host "Installing missing updates..."
         $FormattedMissingUpdates | ForEach-Object {
-            Install-WindowsUpdate -KBArticleID "$_" -AutoReboot -Confirm:$False
+            Install-WindowsUpdate -KBArticleID "$_" -AutoReboot -Confirm:$False | Out-File "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog.log" -Append
         }
     }
     else{
@@ -130,6 +130,14 @@ function CheckPendingRebootStatus () {
         }
         Start-ScheduledTask -TaskName "(MSP) Pending Reboot Checker"
     }
+}
+
+function CreateLogFile () {
+    if(!(Test-Path -Path "C:\Windows\Temp")){New-Item -Path "C:\Windows" -Name "Temp" -ItemType "Directory" | Out-Null}
+    if(!(Test-Path -Path "C:\Windows\Temp\MSP")){New-Item -Path "C:\Windows\Temp" -Name "MSP" -ItemType "Directory" | Out-Null}
+    if(!(Test-Path -Path "C:\Windows\Temp\MSP\Logs")){New-Item -Path "C:\Windows\Temp\MSP" -Name "Logs" -ItemType "Directory" | Out-Null}
+    if(!(Test-Path -Path "C:\Windows\Temp\MSP\Logs\Patch Health")){New-Item -Path "C:\Windows\Temp\MSP\Logs" -Name "Patch Health" -ItemType "Directory" | Out-Null}
+    if(!(Test-Path -Path "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog.log")){New-Item -Path "C:\Windows\Temp\MSP\Logs\Patch Health" -Name "PatchHealthLog.log" -ItemType "File" | Out-Null}
 }
 
 function PunchIt () {
@@ -194,6 +202,7 @@ function PunchIt () {
         if(!(Get-Module -Name "PSWindowsUpdate")){
             InstallPSWindowsUpdate
         }
+        CreateLogFile
         if(((Get-Date).TimeOfDay.TotalHours -lt "5")){
             InstallUpdatesWithForcedReboot
         }

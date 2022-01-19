@@ -131,7 +131,7 @@ function CheckPendingRebootStatus () {
         if(!(Get-ScheduledTask -TaskName "(MSP) Pending Reboot Checker" -ErrorAction SilentlyContinue)){
             Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/PendingRebootChecker/Prod-Branch/PRC%20Installer.ps1" -UseBasicParsing | Invoke-Expression; PunchIt | Out-Null
         }
-        Start-ScheduledTask -TaskName "(MSP) Pending Reboot Checker"
+        Start-ScheduledTask -TaskName '(MSP) Pending Reboot Checker'
     }
 }
 

@@ -22,9 +22,13 @@ function CreateSchedTask () {
 }
 
 function PunchIt () {
-    $ClientOS = Get-WmiObject -class Win32_OperatingSystem | Select-Object -ExpandProperty Caption
+    $ClientOS = (Get-WmiObject -class Win32_OperatingSystem).Caption
     if(($ClientOS | Select-String "Windows 7") -or ($ClientOS | Select-String "Server 2003") -or ($ClientOS | Select-String "2008")){
         Write-Host "This operating system ($ClientOS) is no longer supported...exiting..."
+        EXIT
+    }
+    if((Get-WindowsOptionalFeature -Online | Where-Object {$_.FeatureName -eq "Microsoft-Hyper-V"} | Where-Object {$_.State -eq "Enabled"}) -and ($EndpointOS | Select-String "Server")){
+        Write-Host "$Env:ComputerName is a Hyper-V server and should use the 'Windows Update Hyper-V' scheduled task...exiting..."
         EXIT
     }
     if(Get-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- PRODUCTION)" -ErrorAction SilentlyContinue){

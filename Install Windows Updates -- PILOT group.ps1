@@ -91,7 +91,7 @@ function InstallUpdatesWithNoReboot () {
             $CurrentMonthYear = Get-Date -Format MMyyyy
             Install-WindowsUpdate -KBArticleID "$_" -IgnoreReboot -Confirm:$False | Out-File "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Append
         }
-        CheckPendingRebootStatus
+        #CheckPendingRebootStatus
     }
     else{
         Write-PatchLog "Windows is up-to-date!"

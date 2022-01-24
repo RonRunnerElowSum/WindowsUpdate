@@ -131,23 +131,12 @@ function CheckPendingRebootStatus () {
             Write-PatchLog "PRC is not installed...installing now..."
             Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/PendingRebootChecker/Prod-Branch/PRC%20Installer.ps1" -UseBasicParsing | Invoke-Expression; PunchIt | Out-Null
         }
-        [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
-        [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") | Out-Null
-        $ToastNotification = New-Object System.Windows.Forms.NotifyIcon
-        $ToastNotification.Icon = [System.Drawing.SystemIcons]::Information
-        $ToastNotification.BalloonTipText = "Your computer needs to restart in order to finishing installing updates. Please restart at your earliest convenience."
-        $ToastNotification.BalloonTipTitle = "Reboot Required"
-        $ToastNotification.BalloonTipIcon = "Warning"
-        $ToastNotification.Visible = $True
-        $ToastNotification.ShowBalloonTip(50000)
-        Unregister-Event -SourceIdentifier click_event -ErrorAction SilentlyContinue
-		Register-ObjectEvent $ToastNotification BalloonTipClicked -SourceIdentifier click_event -Action {
-            Write-PatchLog "Executing PRC..."
-            Start-ScheduledTask -TaskName '(MSP) Pending Reboot Checker'
-        } | Out-Null
-        Wait-Event -Timeout 10 -SourceIdentifier click_event > $null
-        Unregister-Event -SourceIdentifier click_event -ErrorAction SilentlyContinue
-        $ToastNotification.Dispose()
+        if(!(Get-ScheduledTask -TaskName '(MSP) Throw Reboot Required Toast Notification' -ErrorAction SilentlyContinue)){
+            Write-PatchLog "The scheduled task ((MSP) Throw Reboot Required Toast Notification) does not exist...creating now..."
+            Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/PendingRebootChecker/Prod-Branch/Create%20Reboot%20Required%20Toast%20Scheduled%20Task.ps1" -UseBasicParsing | Invoke-Expression; PunchIt | Out-Null
+        }
+        Write-PatchLog "Throwing reboot required toast notification..."
+        Start-ScheduledTask -TaskName "(MSP) Throw Reboot Required Toast Notification"
     }
     else{
         Write-PatchLog "$env:ComputerName is not currently in a pending reboot state..."

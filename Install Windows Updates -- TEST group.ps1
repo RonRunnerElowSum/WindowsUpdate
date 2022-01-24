@@ -140,8 +140,6 @@ function CheckPendingRebootStatus () {
         $ToastNotification.BalloonTipIcon = "Warning"
         $ToastNotification.Visible = $True
         $ToastNotification.ShowBalloonTip(50000)
-        $ToastNotification_MouseOver = [System.Windows.Forms.MouseEventHandler]{$ToastNotification.ShowBalloonTip(50000)}
-        $ToastNotification.add_MouseClick($ToastNotification_MouseOver)
         Unregister-Event -SourceIdentifier click_event -ErrorAction SilentlyContinue
 		Register-ObjectEvent $ToastNotification BalloonTipClicked -SourceIdentifier click_event -Action {
             Write-PatchLog "Executing PRC..."

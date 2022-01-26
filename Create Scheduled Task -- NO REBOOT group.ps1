@@ -27,7 +27,7 @@ function PunchIt () {
         Write-Host "This operating system ($ClientOS) is no longer supported...exiting..."
         EXIT
     }
-    if((Get-WindowsOptionalFeature -Online | Where-Object {$_.FeatureName -eq "Microsoft-Hyper-V"} | Where-Object {$_.State -eq "Enabled"}) -and ($EndpointOS | Select-String "Server")){
+    if((Get-WindowsOptionalFeature -Online | Where-Object {$_.FeatureName -eq "Microsoft-Hyper-V"} | Where-Object {$_.State -eq "Enabled"}) -and ($ClientOS | Select-String "Server")){
         Write-Host "$Env:ComputerName is a Hyper-V server and should use the 'Windows Update Hyper-V' scheduled task...exiting..."
         EXIT
     }

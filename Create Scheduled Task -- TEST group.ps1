@@ -35,7 +35,9 @@ function PunchIt () {
         Unregister-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- PRODUCTION)" -Confirm:$False | Out-Null
     }
     if(Get-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- NO REBOOT)" -ErrorAction SilentlyContinue){
-        Unregister-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- NO REBOOT)" -Confirm:$False | Out-Null
+        #Unregister-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- NO REBOOT)" -Confirm:$False | Out-Null
+        Write-Host "The scheduled task named ((MSP) Install Missing Windows Updates (PatchGroup -- NO REBOOT)) already exists...exiting..."
+        EXIT
     }
     if(Get-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- PILOT)" -ErrorAction SilentlyContinue){
         Unregister-ScheduledTask -TaskName "(MSP) Install Missing Windows Updates (PatchGroup -- PILOT)" -Confirm:$False | Out-Null

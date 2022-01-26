@@ -102,10 +102,6 @@ function CheckPendingRebootStatus () {
     $PendingRebootStatus = Get-WURebootStatus -Silent -CancelReboot
     Write-PatchLog "Pending Reboot Status: $PendingRebootStatus"
     if($PendingRebootStatus -eq "True"){
-        if(!(Get-ScheduledTask -TaskName '(MSP) Pending Reboot Checker' -ErrorAction SilentlyContinue)){
-            Write-PatchLog "PRC is not installed...installing now..."
-            Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/PendingRebootChecker/Prod-Branch/PRC%20Installer.ps1" -UseBasicParsing | Invoke-Expression; PunchIt | Out-Null
-        }
         if(!(Get-ScheduledTask -TaskName '(MSP) Throw Reboot Required Toast Notification' -ErrorAction SilentlyContinue)){
             Write-PatchLog "The scheduled task ((MSP) Throw Reboot Required Toast Notification) does not exist...creating now..."
             Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/PendingRebootChecker/Prod-Branch/Create%20Reboot%20Required%20Toast%20Scheduled%20Task.ps1" -UseBasicParsing | Invoke-Expression; PunchIt | Out-Null

@@ -8,14 +8,14 @@ function InstallPSWindowsUpdate () {
     Import-Module PSWindowsUpdate -Force | Out-Null
     if(!(Get-Module -Name "PSWindowsUpdate")){
         Write-Warning "The module PSWindowsUpdate failed to install...exiting..."
-        Write-PatchLog "Warning: the module PSWindowsUpdate failed to install...exiting..."
+        Write-MSPLog -LogSource "MSP Patch Health" -LogType "Warning" -LogMessage "Warning: the module PSWindowsUpdate failed to install...exiting..."
         EXIT
     }
 }
 
 function InstallUpdates () {
     Write-Host "Checking for Windows Updates..."
-    Write-PatchLog "Checking for Windows Updates..."
+    Write-MSPLog -LogSource "MSP Patch Health" -LogType "Information" -LogMessage "Checking for Windows Updates..."
     $MissingUpdates = (Get-WindowsUpdate -MicrosoftUpdate -NotCategory Drivers -NotTitle "Feature update to Windows 10" -NotKBArticleID $BlacklistedPatches).KB
     if(!($Null -eq $MissingUpdates)){
         $NumberOfMissingPatches = $MissingUpdates.Count
@@ -26,53 +26,64 @@ function InstallUpdates () {
             $FormattedMissingUpdates = [string]::Join("`r`n",($MissingUpdates))
         }
         Write-Warning "$Env:COMPUTERNAME is missing the following ($NumberOfMissingPatches) patches:`r`n$FormattedMissingUpdates"
-        Write-PatchLog "$Env:COMPUTERNAME is missing the following ($NumberOfMissingPatches) patches:`r`n$FormattedMissingUpdates"
+        Write-MSPLog -LogSource "MSP Patch Health" -LogType "Warning" -LogMessage "$Env:COMPUTERNAME is missing the following ($NumberOfMissingPatches) patches:`r`n$FormattedMissingUpdates"
         Write-Host "Installing missing updates..."
-        Write-PatchLog "Installing missing updates..."
+        Write-MSPLog -LogSource "MSP Patch Health" -LogType "Information" -LogMessage "Installing missing updates..."
         $FormattedMissingUpdates | ForEach-Object {
-            Install-WindowsUpdate -KBArticleID "$_" -IgnoreReboot -Confirm:$False
+            [string]$InstallUpdates = Install-WindowsUpdate -KBArticleID "$_" -IgnoreReboot -Confirm:$False | Out-String
+            Write-MSPLog -LogSource "MSP Patch Health" -LogType "Information" -LogMessage $InstallUpdates
         }
         CheckPendingRebootStatus
     }
     else{
         Write-Host "Windows is up-to-date!"
-        Write-PatchLog "Windows is up-to-date!"
+        Write-MSPLog -LogSource "MSP Patch Health" -LogType "Information" -LogMessage "Windows is up-to-date!"
         EXIT
     }
 }
 
-function Write-PatchLog ($PatchLogEntryValue) {
-    $CurrentMonthYear = Get-Date -Format MMyyyy
-    if(!(Test-Path -Path "C:\Windows\Temp")){New-Item -Path "C:\Windows" -Name "Temp" -ItemType "Directory" | Out-Null}
-    if(!(Test-Path -Path "C:\Windows\Temp\MSP")){New-Item -Path "C:\Windows\Temp" -Name "MSP" -ItemType "Directory" | Out-Null}
-    if(!(Test-Path -Path "C:\Windows\Temp\MSP\Logs")){New-Item -Path "C:\Windows\Temp\MSP" -Name "Logs" -ItemType "Directory" | Out-Null}
-    if(!(Test-Path -Path "C:\Windows\Temp\MSP\Logs\Patch Health")){New-Item -Path "C:\Windows\Temp\MSP\Logs" -Name "Patch Health" -ItemType "Directory" | Out-Null}
-    if(!(Test-Path -Path "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log")){New-Item -Path "C:\Windows\Temp\MSP\Logs\Patch Health" -Name "PatchHealthLog-$CurrentMonthYear.log" -ItemType "File" | Out-Null}
-    Add-Content -Path "C:\Windows\Temp\MSP\Logs\Patch Health\PatchHealthLog-$CurrentMonthYear.log" -Value "$(Get-Date) -- $PatchLogEntryValue"
+function Write-MSPLog {
+    Param
+    (
+         [Parameter(Mandatory=$true, Position=0)]
+         [ValidateSet('MSP Patch Health','MSP PendingRebootChecker','MSP Disk Health')]
+         [string] $LogSource,
+         [Parameter(Mandatory=$true, Position=1)]
+         [ValidateSet('Information','Warning','Error')]
+         [string] $LogType,
+         [Parameter(Mandatory=$true, Position=2)]
+         [string] $LogMessage
+    )
+
+    New-EventLog -LogName MSP-IT -Source 'MSP' -ErrorAction SilentlyContinue
+    if(!(Get-EventLog -LogName MSP-IT -Source 'MSP Patch Health' -ErrorAction SilentlyContinue)){
+        New-EventLog -LogName MSP-IT -Source 'MSP Patch Health' -ErrorAction SilentlyContinue
+    }
+    if(!(Get-EventLog -LogName MSP-IT -Source 'MSP PendingRebootChecker' -ErrorAction SilentlyContinue)){
+        New-EventLog -LogName MSP-IT -Source 'MSP PendingRebootChecker' -ErrorAction SilentlyContinue
+    }
+    if(!(Get-EventLog -LogName MSP-IT -Source 'MSP Disk Health' -ErrorAction SilentlyContinue)){
+        New-EventLog -LogName MSP-IT -Source 'MSP Disk Health' -ErrorAction SilentlyContinue
+    }
+    Write-EventLog -Log MSP-IT -Source $LogSource -EventID 0 -EntryType $LogType -Message "$LogMessage"
 }
 
 function CheckPendingRebootStatus () {
     $PendingRebootStatus = Get-WURebootStatus -Silent -CancelReboot
-    Write-Host "Pending Reboot Status: $PendingRebootStatus"
-    Write-PatchLog "Pending Reboot Status: $PendingRebootStatus"
+    Write-MSPLog -LogSource "MSP PendingRebootChecker" -LogType "Information" -LogMessage "Pending Reboot Status: $PendingRebootStatus"
     if($PendingRebootStatus -eq "True"){
         <#
         if(!(Get-ScheduledTask -TaskName '(MSP) Pending Reboot Checker' -ErrorAction SilentlyContinue)){
-            Write-PatchLog "PRC is not installed...installing now..."
+            Write-MSPLog -LogSource "MSP PendingRebootChecker" -LogType "Information" -LogMessage "PRC is not installed...installing now..."
             Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/PendingRebootChecker/Prod-Branch/PRC%20Installer.ps1" -UseBasicParsing | Invoke-Expression; PunchIt | Out-Null
         }
         #>
         if(!(Get-ScheduledTask -TaskName '(MSP) Throw Reboot Required Toast Notification' -ErrorAction SilentlyContinue)){
-            Write-PatchLog "The scheduled task ((MSP) Throw Reboot Required Toast Notification) does not exist...creating now..."
+            Write-MSPLog -LogSource "MSP PendingRebootChecker" -LogType "Information" -LogMessage "The scheduled task ((MSP) Throw Reboot Required Toast Notification) does not exist...creating now..."
             Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/PendingRebootChecker/Prod-Branch/Create%20Reboot%20Required%20Toast%20Scheduled%20Task.ps1" -UseBasicParsing | Invoke-Expression; PunchIt | Out-Null
         }
-        Write-Host "Throwing reboot required toast notification..."
-        Write-PatchLog "Throwing reboot required toast notification..."
+        Write-MSPLog -LogSource "MSP PendingRebootChecker" -LogType "Information" -LogMessage "Throwing reboot required toast notification..."
         Start-ScheduledTask -TaskName "(MSP) Throw Reboot Required Toast Notification"
-    }
-    else{
-        Write-Host "$env:ComputerName is not currently in a pending reboot state..."
-        Write-PatchLog "$env:ComputerName is not currently in a pending reboot state..."
     }
 }
 
@@ -81,11 +92,7 @@ function PunchIt () {
     if(($ClientOS | Select-String "Windows 7") -or ($ClientOS | Select-String "Server 2003") -or ($ClientOS | Select-String "2008")){
         Write-Host "OS: $ClientOS"
         Write-Warning "This operating system is no longer supported...exiting..."
-        EXIT
-    }
-    if($ClientOS | Select-String "Server"){
-        Write-Host "OS: $ClientOS"
-        Write-Host "Install patches on servers between 11pm and 5am...exiting..."
+        Write-MSPLog -LogSource "MSP Patch Health" -LogType "Warning" -LogMessage "OS: $ClientOS`r`n`This operating system is no longer supported...exiting..."
         EXIT
     }
     $Win10CurrentBuildNumber = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -ErrorAction SilentlyContinue).CurrentBuildNumber
@@ -117,9 +124,8 @@ function PunchIt () {
         $Win10Build = "21H2"
     }
     Write-Host "Computer Name: $Env:COMPUTERNAME"
-    Write-PatchLog "Computer Name: $Env:COMPUTERNAME"
     Write-Host "OS: $ClientOS $Win10Build"
-    Write-PatchLog "OS: $ClientOS $Win10Build"
+    Write-MSPLog -LogSource "MSP Patch Health" -LogType "Information" -LogMessage "Computer Name: $Env:COMPUTERNAME`r`nOS: $ClientOS $Win10Build"
     if(!(Get-Module -Name "PSWindowsUpdate")){
         InstallPSWindowsUpdate
     }

@@ -1,7 +1,7 @@
 $TaskName = "(MSP) Install Missing Windows Updates (PatchGroup -- TEST)"
 $PSFileURL = "'https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/Install%20Windows%20Updates%20--%20TEST%20group.ps1'"
 
-$ScheduledTaskCmd = "Invoke-WebRequest -URI $PSFileURL -UseBasicParsing | Invoke-Expression; PunchIt"
+$ScheduledTaskCmd = "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;Invoke-WebRequest -URI $PSFileURL -UseBasicParsing | Invoke-Expression; PunchIt"
 $ScheduledTaskArg = "-WindowStyle Hidden -Command `"& {$ScheduledTaskCmd}`" -Verb RunAs"
 
 function CreateSchedTask () {

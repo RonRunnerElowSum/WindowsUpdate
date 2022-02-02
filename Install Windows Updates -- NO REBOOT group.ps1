@@ -66,7 +66,8 @@ function InstallPSWindowsUpdate () {
 }
 
 function InstallUpdatesWithNoReboot () {
-    $BlacklistedPatches = (Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/BlackListedPatches.cfg" -UseBasicParsing).Content
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $BlacklistedPatches = @((Invoke-WebRequest -URI "https://raw.githubusercontent.com/RonRunnerElowSum/WindowsUpdate/Prod-Branch/BlackListedPatches.cfg" -UseBasicParsing).Content)
     Write-MSPLog -LogSource "MSP Patch Health" -LogType "Information" -LogMessage "Checking for Windows Updates..."
     $MissingUpdates = (Get-WindowsUpdate -MicrosoftUpdate -NotCategory Drivers -NotTitle "Feature update to Windows 10" -NotKBArticleID $BlacklistedPatches).KB
     if(!($Null -eq $MissingUpdates)){

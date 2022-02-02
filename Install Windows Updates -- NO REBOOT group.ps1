@@ -190,7 +190,7 @@ function PunchIt () {
     
     $CurrentDate = Get-Date -Format d
 
-    if((Get-WmiObject -Class win32_systemenclosure -ComputerName $Env:ComputerName | Where-Object { $_.chassistypes -eq 9 -or $_.chassistypes -eq 10 -or $_.chassistypes -eq 14}) -and (Get-WmiObject -Class win32_battery -ComputerName $Env:ComputerName)){
+    if((Get-WmiObject -Class win32_SystemEnclosure -ComputerName $Env:ComputerName | Where-Object { $_.ChassisTypes -eq 9 -or $_.ChassisTypes -eq 10 -or $_.ChassisTypes -eq 14}) -and (Get-WmiObject -Class win32_Battery -ComputerName $Env:ComputerName)){
         $EndpointIsLaptop = $True
     }
     else{

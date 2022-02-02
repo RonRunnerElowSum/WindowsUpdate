@@ -214,6 +214,13 @@ function PunchIt () {
     
     $CurrentDate = Get-Date -Format d
     
+    if((Get-WmiObject -Class win32_systemenclosure -ComputerName $Env:ComputerName | Where-Object { $_.chassistypes -eq 9 -or $_.chassistypes -eq 10 -or $_.chassistypes -eq 14}) -and (Get-WmiObject -Class win32_battery -ComputerName $Env:ComputerName)){
+        $EndpointIsLaptop = $True
+    }
+    else{
+        $EndpointIsLaptop = $False
+    }
+
     if($PatchGroupTest | Select-String $CurrentDate){
         Write-MSPLog -LogSource "MSP Patch Health" -LogType "Information" -LogMessage "Computer Name: $Env:COMPUTERNAME`r`nOS: $ClientOS"
         if(!(Get-Module -Name "PSWindowsUpdate")){
@@ -224,7 +231,13 @@ function PunchIt () {
             InstallUpdatesWithForcedReboot
         }
         else{
-            InstallUpdatesWithNoReboot
+            if($EndpointIsLaptop){
+                InstallUpdatesWithNoReboot
+            }
+            else{
+                Write-MSPLog -LogSource "MSP Patch Health" -LogType "Information" -LogMessage "$Env:COMPUTERNAME is not a laptop and only patches between 12am and 5am...exiting..."
+                EXIT
+            }
         }
     }
     else{

@@ -9,12 +9,9 @@ function Get-ThisMonthsPatchTuesday {
       [Parameter(position = 1)]
       [int]$findNthDay = 2
     )
-    [datetime]$today = Get-Date -Format d
-    $todayM = $today.Month.ToString()
-    $todayY = $today.Year.ToString()
-    [datetime]$strtMonth = $todayM + '/1/' + $todayY
-    while ($strtMonth.DayofWeek -ine $weekDay ) { $strtMonth = $StrtMonth.AddDays(1) }
-    $firstWeekDay = $strtMonth
+    [datetime]$DateString = Get-Date -Format MM/01/yyyy
+    while ($DateString.DayofWeek -ine $weekDay ) { $DateString = $DateString.AddDays(1) }
+    $firstWeekDay = $DateString
     if ($findNthDay -eq 1) {
       $dayOffset = 0
     }
@@ -36,19 +33,14 @@ function Get-LastMonthsPatchTuesday {
         [Parameter(position = 1)]
         [int]$FindNthDay = 2
     )
-    [datetime]$Today = Get-Date -Format d
-    $ThisMonth = $Today.Month
-    $ThisYear = $Today.Year
-    if($ThisMonth -eq "1"){
-        $ThisMonth = "12"
-        $DecreaseValue = 1
-        $Thisyear = $ThisYear - $DecreaseValue
+    [datetime]$DateString = Get-Date -Format MM/01/yyyy
+    if($DateString.Month -eq "1"){
+        $DateString = $DateString.AddMonths(11)
+        $DateString = $DateString.AddYears(-1)
     }
     else{
-        $DecreaseValue = 1
-        $ThisMonth = $ThisMonth - $DecreaseValue
+        $DateString = $DateString.AddMonths(-1)
     }
-    [datetime]$DateString = $ThisMonth + '/1/' + $ThisYear
     while ($DateString.DayofWeek -ine $WeekDay ) { $DateString = $DateString.AddDays(1) }
     $firstWeekDay = $DateString
     if($FindNthDay -eq 1){
